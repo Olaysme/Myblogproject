@@ -7,7 +7,10 @@ try {
     $hasAdmin = (int)db()->query('SELECT COUNT(*) FROM admin_users')->fetchColumn() > 0;
 } catch (Throwable $e) {
     $hasAdmin = true;
-    $error = 'Could not connect to MySQL. Create a database and configure its credentials in the project .env file.';
+    $dbErrorCode = $e instanceof PDOException && isset($e->errorInfo[1])
+        ? (string)$e->errorInfo[1]
+        : (string)$e->getCode();
+    $error = 'Could not connect to MySQL. Check the database settings in .env (MySQL error ' . h($dbErrorCode) . ').';
 }
 if (!$error && $hasAdmin) {
     header('Location: /admin/login.php');
