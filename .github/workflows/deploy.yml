@@ -12,6 +12,22 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
+      # The database config stays out of Git and is assembled from Actions secrets.
+      - name: Create production database config
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
+            echo "Missing one or more database Actions secrets (DB_HOST, DB_NAME, DB_USER, DB_PASSWORD)."
+            exit 1
+          fi
+          printf 'DB_HOST=%s\nDB_PORT=%s\nDB_NAME=%s\nDB_USER=%s\nDB_PASSWORD=%s\n' \
+            "$DB_HOST" "${DB_PORT:-3306}" "$DB_NAME" "$DB_USER" "$DB_PASSWORD" > .env
+
       - name: Upload site over FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
@@ -25,8 +41,6 @@ jobs:
             **/.git*
             **/.git*/**
             **/node_modules/**
-            **/.env
-            **/.env.*
             **/.github/**
             **/.gitignore
             **/README.md
